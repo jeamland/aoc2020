@@ -26,12 +26,41 @@ fn main() -> std::io::Result<()> {
         values.push(value);
     }
 
+    let mut found = false;
+
     for (i, x) in values.iter().enumerate() {
         for y in values.iter().skip(i + 1) {
             println!("{} + {} = {}", x, y, x + y);
             if x + y == 2020 {
                 println!("{} + {} = {} -- {} * {} = {}", x, y, x + y, x, y, x * y);
-                return Ok(());
+                found = true;
+                break;
+            }
+        }
+
+        if found {
+            break;
+        }
+    }
+
+    for (i, x) in values.iter().enumerate() {
+        for (j, y) in values.iter().skip(i + 1).enumerate() {
+            for z in values.iter().skip(i + j + 2) {
+                println!("{} + {} + {} = {}", x, y, z, x + y + z);
+                if x + y + z == 2020 {
+                    println!(
+                        "{} + {} + {} = {} -- {} * {} * {} = {}",
+                        x,
+                        y,
+                        z,
+                        x + y + z,
+                        x,
+                        y,
+                        z,
+                        x * y * z
+                    );
+                    return Ok(());
+                }
             }
         }
     }
