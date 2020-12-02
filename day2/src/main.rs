@@ -18,7 +18,8 @@ fn main() -> std::io::Result<()> {
     let file = File::open(matches.value_of("INPUT").unwrap())?;
     let reader = BufReader::new(file);
 
-    let mut good_count = 0;
+    let mut good_count_v1 = 0;
+    let mut good_count_v2 = 0;
 
     for line in reader.lines() {
         let line = line.unwrap();
@@ -34,11 +35,25 @@ fn main() -> std::io::Result<()> {
 
         let char_count = password.chars().filter(|c| *c == character).count();
         if char_count >= low && char_count <= high {
-            good_count += 1;
+            good_count_v1 += 1;
         }
+
+        match (
+            password.chars().nth(low - 1),
+            password.chars().nth(high - 1),
+        ) {
+            (Some(a), Some(b)) if a == character && a != b => {
+                good_count_v2 += 1;
+            }
+            (Some(a), Some(b)) if b == character && a != b => {
+                good_count_v2 += 1;
+            }
+            _ => (),
+        };
     }
 
-    println!("{} good passwords", good_count);
+    println!("{} good passwords (v1)", good_count_v1);
+    println!("{} good passwords (v2)", good_count_v2);
 
     Ok(())
 }
