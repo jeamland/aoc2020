@@ -6,7 +6,7 @@ use std::str::FromStr;
 use clap::{App, Arg};
 
 fn main() -> std::io::Result<()> {
-    let matches = App::new("AOC2020 Day 1")
+    let matches = App::new("AOC2020 Day 2")
         .arg(
             Arg::with_name("INPUT")
                 .help("Input file name")
