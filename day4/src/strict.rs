@@ -70,7 +70,6 @@ pub struct Passport {
     cid: Option<String>,
 }
 
-#[cfg(feature = "strict")]
 impl TryFrom<HashMap<String, String>> for Passport {
     type Error = PassportError;
 
