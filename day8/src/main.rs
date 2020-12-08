@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::prelude::*;
@@ -6,21 +7,32 @@ use std::str::FromStr;
 
 use clap::{App, Arg};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum Instruction {
     Accumulate(i32),
     Jump(i32),
-    Noop,
+    Noop(i32),
+}
+
+impl Instruction {
+    fn is_jump_or_noop(&self) -> bool {
+        match self {
+            Instruction::Accumulate(_) => false,
+            Instruction::Jump(_) => true,
+            Instruction::Noop(_) => true,
+        }
+    }
 }
 
 impl From<String> for Instruction {
     fn from(value: String) -> Self {
         let parts: Vec<&str> = value.split_whitespace().collect();
+        let value = i32::from_str(parts[1]).unwrap();
         match parts[0] {
-            "acc" => Self::Accumulate(i32::from_str(parts[1]).unwrap()),
-            "jmp" => Self::Jump(i32::from_str(parts[1]).unwrap()),
-            "nop" => Self::Noop,
-            _ => Self::Noop,
+            "acc" => Self::Accumulate(value),
+            "jmp" => Self::Jump(value),
+            "nop" => Self::Noop(value),
+            _ => Self::Noop(0),
         }
     }
 }
@@ -40,7 +52,25 @@ impl Executor {
         }
     }
 
+    fn execute_one(&mut self, instruction: &Instruction) {
+        match instruction {
+            Instruction::Accumulate(value) => {
+                self.accumulator += value;
+                self.pc += 1;
+            }
+            Instruction::Jump(value) => {
+                self.pc = ((self.pc as i32) + value) as usize;
+            }
+            Instruction::Noop(_) => {
+                self.pc += 1;
+            }
+        };
+    }
+
     fn run(&mut self) -> i32 {
+        self.pc = 0;
+        self.accumulator = 0;
+
         let mut visited = HashSet::new();
 
         loop {
@@ -50,17 +80,48 @@ impl Executor {
                 visited.insert(self.pc);
             }
 
-            match self.program.get(self.pc).unwrap() {
-                Instruction::Accumulate(value) => {
-                    self.accumulator += value;
-                    self.pc += 1;
-                }
-                Instruction::Jump(value) => {
-                    self.pc = ((self.pc as i32) + value) as usize;
-                }
-                Instruction::Noop => {
-                    self.pc += 1;
-                }
+            let instruction = self.program.get(self.pc).unwrap().clone();
+            self.execute_one(&instruction);
+        }
+    }
+
+    fn tweakpoints(&self) -> Vec<usize> {
+        self.program
+            .iter()
+            .enumerate()
+            .filter(|(_, insn)| insn.is_jump_or_noop())
+            .map(|(pc, _)| pc)
+            .collect()
+    }
+
+    fn run_tweaked(&mut self, tweakpoint: usize) -> Option<i32> {
+        self.pc = 0;
+        self.accumulator = 0;
+
+        let mut visited = HashSet::new();
+
+        loop {
+            if visited.contains(&self.pc) {
+                return None;
+            } else {
+                visited.insert(self.pc);
+            }
+
+            let mut instruction = self.program.get(self.pc).unwrap().clone();
+            if self.pc == tweakpoint {
+                instruction = match instruction {
+                    Instruction::Jump(value) => Instruction::Noop(value),
+                    Instruction::Noop(value) => Instruction::Jump(value),
+                    i => i,
+                };
+            }
+
+            self.execute_one(&instruction);
+
+            match self.pc.cmp(&self.program.len()) {
+                Ordering::Equal => return Some(self.accumulator),
+                Ordering::Greater => return None,
+                Ordering::Less => (),
             };
         }
     }
@@ -86,8 +147,16 @@ fn main() -> std::io::Result<()> {
         program.push(Instruction::from(line));
     }
 
-    let mut executor = Executor::new(program);
+    let mut executor = Executor::new(program.clone());
     println!("acc = {}", executor.run());
+
+    let mut executor = Executor::new(program);
+    for tweak in executor.tweakpoints() {
+        if let Some(acc) = executor.run_tweaked(tweak) {
+            println!("tweakpoint = {}, acc = {}", tweak, acc);
+            break;
+        }
+    }
 
     Ok(())
 }
