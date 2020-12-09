@@ -61,21 +61,46 @@ fn main() -> std::io::Result<()> {
 
     let file = File::open(matches.value_of("INPUT").unwrap())?;
     let reader = BufReader::new(file);
+    let numbers: Vec<usize> = reader
+        .lines()
+        .map(|l| usize::from_str(l.unwrap().as_str()).unwrap())
+        .collect();
 
     let preamble = usize::from_str(matches.value_of("PREAMBLE").unwrap()).unwrap();
     let mut buffer = NumberBuffer::new(preamble);
+    let mut magic_number = 0;
 
-    for number in reader
-        .lines()
-        .map(|l| usize::from_str(l.unwrap().as_str()).unwrap())
-    {
+    for number in numbers.iter().copied() {
         if buffer.ready() && !buffer.is_sum_of_preamble_pair(number) {
             println!("{}", number);
+            magic_number = number;
             break;
         }
 
         buffer.push(number);
     }
+
+    let mut run: Vec<usize> = Vec::new();
+
+    for number in numbers.iter().copied() {
+        let mut sum: usize = run.iter().copied().sum();
+        while sum > magic_number {
+            run.remove(0);
+            sum = run.iter().copied().sum();
+        }
+
+        if sum == magic_number {
+            break;
+        }
+
+        run.push(number);
+    }
+
+    println!(
+        "{:?} {}",
+        run,
+        run.iter().min().unwrap() + run.iter().max().unwrap()
+    );
 
     Ok(())
 }
