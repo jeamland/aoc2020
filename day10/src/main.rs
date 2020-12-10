@@ -14,6 +14,27 @@ where
     iter2.zip(iter)
 }
 
+fn run_counts(numbers: &[usize]) -> Vec<usize> {
+    let mut runs = Vec::new();
+    let mut count = 0;
+
+    for difference in pairwise(numbers.iter().copied()).map(|(a, b)| b - a) {
+        match difference {
+            1 => count += 1,
+            _ => {
+                runs.push(count);
+                count = 0;
+            }
+        }
+    }
+
+    if count != 0 {
+        runs.push(count);
+    }
+
+    runs
+}
+
 fn main() -> std::io::Result<()> {
     let matches = App::new("AOC2020 Day 10")
         .arg(
@@ -46,6 +67,14 @@ fn main() -> std::io::Result<()> {
     }
 
     println!("{} x 1, {} x 3 -> {}", count_1, count_3, count_1 * count_3);
+
+    let counts: Vec<usize> = run_counts(&numbers)
+        .iter()
+        .copied()
+        .filter(|c| *c > 1)
+        .map(|c| ((c * (c - 1)) / 2) + 1)
+        .collect();
+    println!("{}", counts.iter().copied().product::<usize>());
 
     Ok(())
 }
