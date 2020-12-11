@@ -100,7 +100,42 @@ impl SeatingArea {
         count
     }
 
-    fn run_cycle(&self) -> Self {
+    fn visibly_occupied_neighbours(&self, x: usize, y: usize) -> usize {
+        let mut count = 0;
+
+        for dx in -1..2 {
+            for dy in -1..2 {
+                if (dx, dy) == (0, 0) {
+                    continue;
+                }
+
+                let mut cx = (x as i32) + dx;
+                let mut cy = (y as i32) + dy;
+
+                while cx >= 0
+                    && cx < (self.floor[0].len() as i32)
+                    && cy >= 0
+                    && cy < (self.floor.len() as i32)
+                {
+                    match self.floor[cy as usize][cx as usize] {
+                        SeatState::Floor => (),
+                        SeatState::Empty => break,
+                        SeatState::Occupied => {
+                            count += 1;
+                            break;
+                        }
+                    };
+
+                    cx += dx;
+                    cy += dy;
+                }
+            }
+        }
+
+        count
+    }
+
+    fn run_cycle_v1(&self) -> Self {
         let mut floor = Vec::new();
 
         for (y, row) in self.floor.iter().enumerate() {
@@ -118,6 +153,40 @@ impl SeatingArea {
                     }
                     SeatState::Occupied => {
                         if self.occupied_neighbours(x, y) >= 4 {
+                            SeatState::Empty
+                        } else {
+                            SeatState::Occupied
+                        }
+                    }
+                };
+
+                new_row.push(new_state);
+            }
+
+            floor.push(new_row);
+        }
+
+        Self { floor }
+    }
+
+    fn run_cycle_v2(&self) -> Self {
+        let mut floor = Vec::new();
+
+        for (y, row) in self.floor.iter().enumerate() {
+            let mut new_row = Vec::new();
+
+            for (x, state) in row.iter().copied().enumerate() {
+                let new_state = match state {
+                    SeatState::Floor => SeatState::Floor,
+                    SeatState::Empty => {
+                        if self.visibly_occupied_neighbours(x, y) == 0 {
+                            SeatState::Occupied
+                        } else {
+                            SeatState::Empty
+                        }
+                    }
+                    SeatState::Occupied => {
+                        if self.visibly_occupied_neighbours(x, y) >= 5 {
                             SeatState::Empty
                         } else {
                             SeatState::Occupied
@@ -166,11 +235,22 @@ fn main() -> std::io::Result<()> {
     println!("{}", floor);
 
     let mut f1 = floor.clone();
-    let mut f2 = floor.run_cycle();
+    let mut f2 = floor.run_cycle_v1();
 
     while f1 != f2 {
         f1 = f2;
-        f2 = f1.run_cycle();
+        f2 = f1.run_cycle_v1();
+    }
+    println!("{}", f2);
+    println!("{} occupied", f2.occupied());
+    println!();
+
+    let mut f1 = floor.clone();
+    let mut f2 = floor.run_cycle_v2();
+
+    while f1 != f2 {
+        f1 = f2;
+        f2 = f1.run_cycle_v2();
     }
     println!("{}", f2);
     println!("{} occupied", f2.occupied());
