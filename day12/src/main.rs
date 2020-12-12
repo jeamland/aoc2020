@@ -109,13 +109,13 @@ impl fmt::Display for Heading {
     }
 }
 
-struct Ferry {
+struct FerryV1 {
     north: i32,
     east: i32,
     heading: Heading,
 }
 
-impl Ferry {
+impl FerryV1 {
     fn new() -> Self {
         Self {
             north: 0,
@@ -139,11 +139,56 @@ impl Ferry {
                 Heading::West => self.east -= v as i32,
             },
         }
+    }
 
-        println!(
-            "{} -> ({} {} {})",
-            action, self.north, self.east, self.heading
-        );
+    fn distance(&self) -> usize {
+        let distance = self.north.abs() + self.east.abs();
+        distance as usize
+    }
+}
+
+struct FerryV2 {
+    north: i32,
+    east: i32,
+    waypoint: (i32, i32),
+}
+
+impl FerryV2 {
+    fn new() -> Self {
+        Self {
+            north: 0,
+            east: 0,
+            waypoint: (1, 10),
+        }
+    }
+
+    fn process_action(&mut self, action: Action) {
+        match action {
+            Action::North(v) => self.waypoint = (self.waypoint.0 + v as i32, self.waypoint.1),
+            Action::South(v) => self.waypoint = (self.waypoint.0 - v as i32, self.waypoint.1),
+            Action::East(v) => self.waypoint = (self.waypoint.0, self.waypoint.1 + v as i32),
+            Action::West(v) => self.waypoint = (self.waypoint.0, self.waypoint.1 - v as i32),
+            Action::Left(v) => {
+                self.waypoint = match v {
+                    90 => (self.waypoint.1, -self.waypoint.0),
+                    180 => (-self.waypoint.0, -self.waypoint.1),
+                    270 => (-self.waypoint.1, self.waypoint.0),
+                    _ => panic!("bad rotation"),
+                }
+            }
+            Action::Right(v) => {
+                self.waypoint = match v {
+                    90 => (-self.waypoint.1, self.waypoint.0),
+                    180 => (-self.waypoint.0, -self.waypoint.1),
+                    270 => (self.waypoint.1, -self.waypoint.0),
+                    _ => panic!("bad rotation"),
+                }
+            }
+            Action::Forward(v) => {
+                self.north += self.waypoint.0 * v as i32;
+                self.east += self.waypoint.1 * v as i32;
+            }
+        }
     }
 
     fn distance(&self) -> usize {
@@ -165,14 +210,17 @@ fn main() -> std::io::Result<()> {
     let file = File::open(matches.value_of("INPUT").unwrap())?;
     let reader = BufReader::new(file);
 
-    let mut ferry = Ferry::new();
+    let mut ferryv1 = FerryV1::new();
+    let mut ferryv2 = FerryV2::new();
 
     for line in reader.lines() {
         let action = Action::from(line.unwrap());
-        ferry.process_action(action);
+        ferryv1.process_action(action);
+        ferryv2.process_action(action);
     }
 
-    println!("distance: {}", ferry.distance());
+    println!("distance v1: {}", ferryv1.distance());
+    println!("distance v2: {}", ferryv2.distance());
 
     Ok(())
 }
