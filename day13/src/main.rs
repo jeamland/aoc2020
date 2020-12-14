@@ -44,7 +44,7 @@ fn existence(rem_a: usize, mod_a: usize, rem_b: usize, mod_b: usize) -> usize {
 }
 
 fn main() -> std::io::Result<()> {
-    let matches = App::new("AOC2020 Day 1")
+    let matches = App::new("AOC2020 Day 13")
         .arg(
             Arg::with_name("INPUT")
                 .help("Input file name")
