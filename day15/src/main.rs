@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
 use clap::{App, Arg};
@@ -19,19 +20,42 @@ fn main() {
         .map(|v| usize::from_str(v).unwrap())
         .collect();
 
-    for _ in numbers.len()..2020 {
-        let number = *numbers.last().unwrap();
-        match numbers.iter().rposition(|v| *v == number) {
-            None => numbers.push(0),
+    let mut n1 = numbers.clone();
+    for _ in n1.len()..2020 {
+        let number = *n1.last().unwrap();
+        match n1.iter().rposition(|v| *v == number) {
+            None => n1.push(0),
             Some(n) => {
-                let value = match numbers[..n].iter().rposition(|v| *v == number) {
+                let value = match n1[..n].iter().rposition(|v| *v == number) {
                     None => 0,
                     Some(m) => n - m,
                 };
-                numbers.push(value);
+                n1.push(value);
             }
         }
     }
 
-    println!("{}", numbers.last().unwrap());
+    println!("{}", n1.last().unwrap());
+
+    let mut cache = HashMap::new();
+
+    let mut number = numbers.pop().unwrap();
+    for (c, n) in numbers.iter().enumerate() {
+        cache.insert(*n, c);
+    }
+
+    for c in numbers.len()..30000000 - 1 {
+        if c % 1000000 == 0 {
+            println!("... {:8}", c);
+        }
+        let old_number = number;
+
+        number = match cache.get(&number) {
+            None => 0,
+            Some(v) => c - *v,
+        };
+        cache.insert(old_number, c);
+    }
+
+    println!("{}", number);
 }
