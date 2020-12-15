@@ -219,7 +219,7 @@ impl SeatingArea {
 }
 
 fn main() -> std::io::Result<()> {
-    let matches = App::new("AOC2020 Day 1")
+    let matches = App::new("AOC2020 Day 11")
         .arg(
             Arg::with_name("INPUT")
                 .help("Input file name")
